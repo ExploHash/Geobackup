@@ -1,0 +1,9 @@
+#year:month:day:hour:minute
+#time examples
+#*:1,6,12:1:24:00 -> on the monts 1,6,12 on dag 1 on 24 hour 
+#*:*:/2:/5:00 -> on the even days and on 05, 10, 15, 20 uur
+#*:*:*:02:00 -> every day on 2 uur nachts
+#backup examples
+#*:*:*:02:00 /var/www/example.com !/var/www/example.com/images !*/databases/ -> backup example.com and ignore images and databases
+
+*:*:*:*:* /root/build/test

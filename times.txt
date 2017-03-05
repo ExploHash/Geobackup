@@ -1,9 +1,17 @@
 #year:month:day:hour:minute
 #time examples
-#*:1,6,12:1:24:00 -> on the monts 1,6,12 on dag 1 on 24 hour 
-#*:*:/2:/5:00 -> on the even days and on 05, 10, 15, 20 uur
-#*:*:*:02:00 -> every day on 2 uur nachts
+#*:1,6,12:1:24:00 -> on the monts 1,6,12 on dag 1 on 24 hour when there are CHANGES
+#*:*:/2:/5:00 -> on the even days and on 05, 10, 15, 20 uur when there are CHANGES
+#*:*:*:02:00 -> every day on 2 uur nachts when there are CHANGES
 #backup examples
-#*:*:*:02:00 /var/www/example.com !/var/www/example.com/images !*/databases/ -> backup example.com and ignore images and databases
+#*:*:*:02:00 /var/www/example.com !/var/www/example.com/images !*/databases/ -> backup example.com and ignore images and databases when there are CHANGES
 
-*:*:*:*:* /root/build/test
+#A '$' for the line means there has to be no changes to backup!
+#$*:*:!/2:*:02:00 /root/build/test2 -> Backup backup on the not even days on 2 hour at night ALWAYS
+
+
+
+
+
+$*:*:*:*:* /root/build/test
+

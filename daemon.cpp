@@ -1,7 +1,5 @@
-// my first program in C++
 #include <iostream>
 #include <fstream>
-//#include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -14,14 +12,17 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <new>
+#include <cstddef>
 
 using namespace std;
 
 //const string Programroot = "/usr/geobackup/";
-std::const string Programroot = "/root/build/geobackup/";
-std::const string DaemonPath = Programroot+"bin/daemon";
-std::const string TimesPath = Programroot+"times.txt";
-std::const string LogPath = "/root/build/debug.log";
+const string Programroot = "/root/build/geobackup/";
+const string DaemonPath = Programroot+"bin/daemon";
+const string TimesPath = Programroot+"times.txt";
+const string LogPath = "/root/build/debug.log";
+const string KnownChars = ":0123456789/,*!-";
 
 bool isInstalled(){//check if daemon executable is found
   struct stat buffer;   
@@ -64,16 +65,16 @@ int gettimesfile_amount(){//get amount of lines of the times.txt
 	return number_of_lines;
 }
 
-string gettimesfile(int a){
+string * gettimesfile(int a){
 	ifstream file(TimesPath.c_str());
-
-        string myArray[a];
+		string* myArray;
+        myArray = new string[a];
 
         for(int i = 0; i < 5; ++i)
         {
             file >> myArray[i];
         }
-		return myArray;
+		return myArray;  //pointer so I can delete memory later
 }
 
 string exec(const char* cmd) {//I know, I know, grabbed from StackOverflow :/
@@ -99,22 +100,23 @@ bool checkTimes(string line, int i){
 		return false;
 	}
 	//find first space
-	location = strchr(line, ' '); //get location of the first space
-	if(location != NULL){
+	size_t location;
+	location = line.find_first_of(" "); //get location of the first space
+	if(location != string::npos){
+		size_t location2;
 		location2 = line.find_first_of(":", location); //get location of the first ':' after the space 
 		if(location2 == string::npos){//checking if space is found in time area
 			//check if time area is correct formatted
 			int strlen = line.length();
-			char lineChars[strlen];
-			strncpy(lineChars, line.c_str(), sizeof(lineChars)); //convert string to chars
-			lineChars[sizeof(lineChars) - 1] = 0;
 			int totalis = 0;
-			for(a = 0; a < location; a = a + 1 ){//loop through chars
-				if(lineChars[a] == ':'){//new ':' found
+			for(int a = 0; a < location; a = a + 1 ){//loop through chars
+				string character = line.substr(a,1); //not a char because sometimes have to use it as string
+				if(character == ":"){//new ':' found
 					totalis++;
 				}
-				if(strchr(":0123456789/,*!", lineChars[a]) == NULL){//check for know chars
-					logN("Incorrect formatting, illegal token '"+lineChars[a]+"' found on "+TimesPath+"["+to_s(i)+"]. Skipping line.");
+
+				if(KnownChars.find_first_of(character)){//check for known chars
+					logN("Incorrect formatting, illegal token '"+character+"' found on "+TimesPath+"["+to_s(i)+"]. Skipping line.");
 					return false;
 				}
 				//stoped working here
@@ -128,7 +130,7 @@ bool checkTimes(string line, int i){
 			}
 
 			string currentTime = getTime(); //get current time in year:month:day:hour:minute format
-			int startPos = 0
+			int startPos = 0;
 			if(line.substr(0,1) == "$"){//check if always backup ('$') is set
 				startPos++;
 			}
@@ -144,18 +146,23 @@ bool checkTimes(string line, int i){
 	}
 }
 
-void process(){//the process which get runned every minute
+char * generateCommand(string type){
+	char * command = new char[12];
+	return command;
+} 
+bool process(){//the process which get runned every minute
   logN("Running process...");
   struct stat buffer;   
-  if(stat(TimesPath.c_str(), &buffer) == 0){
+  if(stat(TimesPath.c_str(), &buffer) == 0){//check if tab file exists
   int line_amount = gettimesfile_amount();
-  string lines[line_amount] = gettimesfile(line_amount);
+  string* lines = gettimesfile(line_amount);
   for(int i = 0; i < line_amount; ++i){
 	  bool MustRunNow = checkTimes(lines[i], i);
 	  if(MustRunNow){
 		  exec(generateCommand("backup"));
 	  }
   }
+  delete[] lines; //delete lines memory
 }else{
 	logN("Times file (still) not accessable!");
 	return false;

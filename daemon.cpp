@@ -22,14 +22,16 @@ const string Programroot = "/root/build/geobackup/";
 const string DaemonPath = Programroot+"bin/daemon";
 const string TimesPath = Programroot+"times.txt";
 const string LogPath = "/root/build/debug.log";
-const string KnownChars = ":0123456789/,*!-";
+const string KnownChars = ":0123456789/,*!-$";
+const string Tabformat = ["year","month","day","hour","minute"];
 
 bool isInstalled(){//check if daemon executable is found
   struct stat buffer;   
   return (stat (DaemonPath.c_str(), &buffer) == 0);
 }
 
-string to_s(int a){//int to string
+template <typename TS>
+string to_s(TS a){//int to string
 stringstream ss; //create string stream
 ss << a; //print int to stream
 string str = ss.str(); //convert stream to string
@@ -102,33 +104,52 @@ bool checkTimes(string line, int i){
 	//find first space
 	size_t location;
 	location = line.find_first_of(" "); //get location of the first space
-	if(location != string::npos){
+	if(location != string::npos){//check for spaces
+    //check if time area is correct formatted
 		size_t location2;
 		location2 = line.find_first_of(":", location); //get location of the first ':' after the space 
+		
 		if(location2 == string::npos){//checking if space is found in time area
-			//check if time area is correct formatted
-			int strlen = line.length();
+			int strlength = line.length();
 			int totalis = 0;
-			for(int a = 0; a < location; a = a + 1 ){//loop through chars
+      bool error = false; 
+			for(int a = 0; a < location; a = a + 1 ){//loop through chars from time section
 				string character = line.substr(a,1); //not a char because sometimes have to use it as string
 				if(character == ":"){//new ':' found
 					totalis++;
 				}
 
-				if(KnownChars.find_first_of(character)){//check for known chars
-					logN("Incorrect formatting, illegal token '"+character+"' found on "+TimesPath+"["+to_s(i)+"]. Skipping line.");
-					return false;
+				if(KnownChars.find_first_of(character)){//check if character is illegal
+					logN("Incorrect formatting, illegal token '"+character+"' found on "+TimesPath+"["+to_s(i)+"].");
+          error = true;
 				}
-				//stoped working here
-				//
-				//
-				//
+        if(character == ":" && line.substr(a+1,1) == ":"){//check if part is empty
+          logN("Incorrect formatting, "+Tabformat[totalis]+" is empty on "+TimesPath+"["+to_s(i)+"].");
+          error = true;
+        }
 			}
 			if(totalis < 4){//to little ':'
-				logN("Incorrect formatting, to little ':' on "+TimesPath+"["+to_s(i)+"]. Skipping line.");
-				return false;
+				logN("Incorrect formatting, to little ':' on "+TimesPath+"["+to_s(i)+"].");
+				error = true;
 			}
+      if(totalis > 4){//to little ':'
+        logN("Incorrect formatting, to many ':' on "+TimesPath+"["+to_s(i)+"].");
+        error = true;
+      }
+      if(error){//if there were errors
+        logN("Line "+to_s(i)+" skipped.");
+        return false;
+      }
 
+      //check if backup paths are formatted right
+      string backuppaths = line.substr(location+1, strlength-(location+1));
+      string bplength = backuppaths.length();
+      for(int a = 0; a < bplength; a++){//loop through chars from path section
+        //ended here
+        //
+        //
+        //
+      }
 			string currentTime = getTime(); //get current time in year:month:day:hour:minute format
 			int startPos = 0;
 			if(line.substr(0,1) == "$"){//check if always backup ('$') is set
@@ -171,7 +192,7 @@ bool process(){//the process which get runned every minute
 int main(){
   	if(isInstalled()){
 
-    	logN("Entering Daemon");
+    	logN("Entering Daemon GB");
     	pid_t pid, sid;
 
    		//Fork the Parent Process

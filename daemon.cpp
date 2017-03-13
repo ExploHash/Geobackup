@@ -21,7 +21,7 @@ using namespace std;
 //const string Programroot = "/usr/geobackup/";
 const string Programroot = "/root/build/geobackup/";
 const string DaemonPath = Programroot+"bin/daemon";
-const string TimesPath = Programroot+"times.txt";
+const string TabPath = Programroot+"tab.txt";
 const string LogPath = "/root/build/debug.log";
 const string KnownChars = ":0123456789/,*!-$";
 const string Tabformat = ["year","month","day","hour","minute"];
@@ -57,10 +57,10 @@ string getTime(){
   return to_s(year) + ":" + to_s(month) + ":" + to_s(day) + ":" + to_s(hour) + ":" + to_s(minute);
 }
 
-int gettimesfile_amount(){//get amount of lines of the times.txt
+int gettabfile_amount(){//get amount of lines of the tab.txt
     int number_of_lines = 0;
     string line;
-    ifstream myfile(TimesPath.c_str());
+    ifstream myfile(TabPath.c_str());
 
     while (std::getline(myfile, line)){
         ++number_of_lines;
@@ -68,8 +68,8 @@ int gettimesfile_amount(){//get amount of lines of the times.txt
 	return number_of_lines;
 }
 
-string * gettimesfile(int a){
-	ifstream file(TimesPath.c_str());
+string * gettabfile(int a){//get lines from tab file in array
+	ifstream file(TabPath.c_str());
 		string* myArray;
         myArray = new string[a];
 
@@ -97,7 +97,7 @@ string exec(const char* cmd) {//I know, I know, grabbed from StackOverflow :/
     pclose(pipe);
     return result;
 }
-bool checkTimes(string line, int i){//readTab() is better
+bool readTab(string line, int i){
 	//check if line is comment or empty
 	if("#" == line.substr(0,1) && line.empty()){
 		return false;
@@ -122,20 +122,20 @@ bool checkTimes(string line, int i){//readTab() is better
 				}
 
 				if(KnownChars.find_first_of(character)){//check if character is illegal
-					logN("Incorrect formatting, illegal token '"+character+"' found on "+TimesPath+"["+to_s(i)+"].");
+					logN("Incorrect formatting, illegal token '"+character+"' found on "+TabPath+"["+to_s(i)+"].");
           error = true;
 				}
         if(character == ":" && line.substr(a+1,1) == ":"){//check if part is empty
-          logN("Incorrect formatting, "+Tabformat[totalis]+" is empty on "+TimesPath+"["+to_s(i)+"].");
+          logN("Incorrect formatting, "+Tabformat[totalis]+" is empty on "+TabPath+"["+to_s(i)+"].");
           error = true;
         }
 			}
 			if(totalis < 4){//to little ':'
-				logN("Incorrect formatting, to little ':' on "+TimesPath+"["+to_s(i)+"].");
+				logN("Incorrect formatting, to little ':' on "+TabPath+"["+to_s(i)+"].");
 				error = true;
 			}
       if(totalis > 4){//to little ':'
-        logN("Incorrect formatting, to many ':' on "+TimesPath+"["+to_s(i)+"].");
+        logN("Incorrect formatting, to many ':' on "+TabPath+"["+to_s(i)+"].");
         error = true;
       }
       if(error){//if there were errors
@@ -171,11 +171,11 @@ bool checkTimes(string line, int i){//readTab() is better
 			string Timestime = line.substr(startPos, location-1); //get time section from line
 
 		}else{
-			logN("Space(s) found on "+TimesPath+"["+to_s(i)+"] in the area where the time is defined. Skipping line.");
+			logN("Space(s) found on "+TabPath+"["+to_s(i)+"] in the area where the time is defined. Skipping line.");
 			return false;
 		}
 	}else{
-		logN("No spaces found on "+TimesPath+"["+to_s(i)+"]. Skipping line.");
+		logN("No spaces found on "+TabPath+"["+to_s(i)+"]. Skipping line.");
 		return false;
 	}
 }
@@ -187,18 +187,18 @@ char * generateCommand(string type){
 bool process(){//the process which get runned every minute
   logN("Running process...");
   struct stat buffer;   
-  if(stat(TimesPath.c_str(), &buffer) == 0){//check if tab file exists
-  int line_amount = gettimesfile_amount();
-  string* lines = gettimesfile(line_amount);
+  if(stat(TabPath.c_str(), &buffer) == 0){//check if tab file exists
+  int line_amount = gettabfile_amount();
+  string* lines = gettabfile(line_amount);
   for(int i = 0; i < line_amount; ++i){
-	  bool MustRunNow = checkTimes(lines[i], i);
+	  bool MustRunNow = readTab(lines[i], i);
 	  if(MustRunNow){
 		  exec(generateCommand("backup"));
 	  }
   }
   delete[] lines; //delete lines memory
 }else{
-	logN("Times file (still) not accessable!");
+	logN("Tab file (still) not accessable!");
 	return false;
 }}
 

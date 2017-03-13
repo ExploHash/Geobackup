@@ -18,13 +18,13 @@
 
 using namespace std;
 
-//const string Programroot = "/usr/geobackup/";
+//const string Programroot = "/usr/src/geobackup/";
 const string Programroot = "/root/build/geobackup/";
 const string DaemonPath = Programroot+"bin/daemon";
 const string TabPath = Programroot+"tab.txt";
 const string LogPath = "/root/build/debug.log";
 const string KnownChars = ":0123456789/,*!-$";
-const string Tabformat = ["year","month","day","hour","minute"];
+const string Tabformat[5] = {"year","month","day","hour","minute"};
 
 bool isInstalled(){//check if daemon executable is found
   struct stat buffer;   
@@ -71,12 +71,17 @@ int gettabfile_amount(){//get amount of lines of the tab.txt
 string * gettabfile(int a){//get lines from tab file in array
 	ifstream file(TabPath.c_str());
 		string* myArray;
-        myArray = new string[a];
-
-        for(int i = 0; i < 5; ++i)
-        {
-            file >> myArray[i];
+        myArray = new string[a-1];
+        short loop=0;
+        string line;
+        if (file.is_open()){
+          while (loop < a-1){
+            getline (file,line); //get one line from the file
+            myArray[loop] = line;
+            loop++;
         }
+        file.close(); //closing the file
+    }
 		return myArray;  //pointer so I can delete memory later
 }
 
@@ -99,7 +104,8 @@ string exec(const char* cmd) {//I know, I know, grabbed from StackOverflow :/
 }
 bool readTab(string line, int i){
 	//check if line is comment or empty
-	if("#" == line.substr(0,1) && line.empty()){
+	if("#" == line.substr(0,1) || line.empty()){
+    logN("Comment found on "+TabPath+"["+to_s(i+1)+"]. Skipping line.");
 		return false;
 	}
 	//find first space
@@ -121,39 +127,39 @@ bool readTab(string line, int i){
 					totalis++;
 				}
 
-				if(KnownChars.find_first_of(character)){//check if character is illegal
-					logN("Incorrect formatting, illegal token '"+character+"' found on "+TabPath+"["+to_s(i)+"].");
+				if(KnownChars.find_first_of(character) == string::npos){//check if character is illegal
+					logN("Incorrect formatting, illegal token '"+character+"' found on "+TabPath+"["+to_s(i+1)+"].");
           error = true;
 				}
         if(character == ":" && line.substr(a+1,1) == ":"){//check if part is empty
-          logN("Incorrect formatting, "+Tabformat[totalis]+" is empty on "+TabPath+"["+to_s(i)+"].");
+          logN("Incorrect formatting, "+Tabformat[totalis]+" is empty on "+TabPath+"["+to_s(i+1)+"].");
           error = true;
         }
 			}
 			if(totalis < 4){//to little ':'
-				logN("Incorrect formatting, to little ':' on "+TabPath+"["+to_s(i)+"].");
+				logN("Incorrect formatting, to little ':' on "+TabPath+"["+to_s(i+1)+"].");
 				error = true;
 			}
       if(totalis > 4){//to little ':'
-        logN("Incorrect formatting, to many ':' on "+TabPath+"["+to_s(i)+"].");
+        logN("Incorrect formatting, to many ':' on "+TabPath+"["+to_s(i+1)+"].");
         error = true;
       }
       if(error){//if there were errors
-        logN("Line "+to_s(i)+" skipped.");
+        logN("Line "+to_s(i+1)+" skipped.");
         return false;
       }
 
       //check if backup paths are formatted right
       string backuppaths = line.substr(location+1, strlength-(location+1));
-      string bplength = backuppaths.length();
+      unsigned short int bplength = backuppaths.length();
 			string character2;
 			int EarlierSpace = 0;
 			vector<string> backupP;
 			vector<string> excludeP;
       for(int a = 0; a < bplength; a++){//loop through chars from path section
 				character2 = backuppaths.substr(a,1);
-				if(character === " " && EarlierSpace > 0){//if the >1nd space is found
-						if(backuppaths.substr(EarlierSpace+1,1) !== "!"){//if it has to be excluded
+				if(character == " " && EarlierSpace > 0){//if the >1nd space is found
+						if(backuppaths.substr(EarlierSpace+1,1) != "!"){//if it has to be excluded
 							backupP.resize(backupP.size()+1);
 							backupP[backupP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
 						}else{//if it hast to be backupped
@@ -171,11 +177,11 @@ bool readTab(string line, int i){
 			string Timestime = line.substr(startPos, location-1); //get time section from line
 
 		}else{
-			logN("Space(s) found on "+TabPath+"["+to_s(i)+"] in the area where the time is defined. Skipping line.");
+			logN("Space(s) found on "+TabPath+"["+to_s(i+1)+"] in the area where the time is defined. Skipping line.");
 			return false;
 		}
 	}else{
-		logN("No spaces found on "+TabPath+"["+to_s(i)+"]. Skipping line.");
+		logN("No spaces found on "+TabPath+"["+to_s(i+1)+"]. Skipping line.\n"+line);
 		return false;
 	}
 }

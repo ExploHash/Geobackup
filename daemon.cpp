@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <vector>
 #include <ctime>
 #include <sstream>
 #include <stdexcept>
@@ -96,7 +97,7 @@ string exec(const char* cmd) {//I know, I know, grabbed from StackOverflow :/
     pclose(pipe);
     return result;
 }
-bool checkTimes(string line, int i){
+bool checkTimes(string line, int i){//readTab() is better
 	//check if line is comment or empty
 	if("#" == line.substr(0,1) && line.empty()){
 		return false;
@@ -113,8 +114,9 @@ bool checkTimes(string line, int i){
 			int strlength = line.length();
 			int totalis = 0;
       bool error = false; 
+			string character;
 			for(int a = 0; a < location; a = a + 1 ){//loop through chars from time section
-				string character = line.substr(a,1); //not a char because sometimes have to use it as string
+				character = line.substr(a,1); //not a char because sometimes have to use it as string
 				if(character == ":"){//new ':' found
 					totalis++;
 				}
@@ -144,11 +146,22 @@ bool checkTimes(string line, int i){
       //check if backup paths are formatted right
       string backuppaths = line.substr(location+1, strlength-(location+1));
       string bplength = backuppaths.length();
+			string character2;
+			int EarlierSpace = 0;
+			vector<string> backupP;
+			vector<string> excludeP;
       for(int a = 0; a < bplength; a++){//loop through chars from path section
-        //ended here
-        //
-        //
-        //
+				character2 = backuppaths.substr(a,1);
+				if(character === " " && EarlierSpace > 0){//if the >1nd space is found
+						if(backuppaths.substr(EarlierSpace+1,1) !== "!"){//if it has to be excluded
+							backupP.resize(backupP.size()+1);
+							backupP[backupP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
+						}else{//if it hast to be backupped
+							excludeP.resize(excludeP.size()+1);
+							excludeP[excludeP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
+						}
+				}
+
       }
 			string currentTime = getTime(); //get current time in year:month:day:hour:minute format
 			int startPos = 0;

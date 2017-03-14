@@ -40,9 +40,11 @@ string str = ss.str(); //convert stream to string
 }
 
 int logN(string message){//log message to log file
+  time_t seconds;
+  seconds = time(NULL);
   ofstream myfile;
   myfile.open(LogPath.c_str(), ios::app); //openfile to write to end
-  myfile << message+"\n";
+  myfile << "["+to_s(seconds)+"]"+message+"\n";
   myfile.close();
   return 0;
 }
@@ -104,8 +106,8 @@ string exec(const char* cmd) {//I know, I know, grabbed from StackOverflow :/
 }
 bool readTab(string line, int i){
 	//check if line is comment or empty
-	if("#" == line.substr(0,1) || line.empty()){
-    logN("Comment found on "+TabPath+"["+to_s(i+1)+"]. Skipping line.");
+	if(line.substr(0,1) == "#" || line.length() == 1){
+    logN("Comment or empty line found on "+TabPath+"["+to_s(i+1)+"]. Skipping line.");
 		return false;
 	}
 	//find first space
@@ -158,14 +160,17 @@ bool readTab(string line, int i){
 			vector<string> excludeP;
       for(int a = 0; a < bplength; a++){//loop through chars from path section
 				character2 = backuppaths.substr(a,1);
-				if(character == " " && EarlierSpace > 0){//if the >1nd space is found
+				if(character2 == " " && EarlierSpace > 0 && backuppaths.substr(a+1,1) != " "){//if the >1nd space is found and the next char is no space
 						if(backuppaths.substr(EarlierSpace+1,1) != "!"){//if it has to be excluded
+              //ifexists
 							backupP.resize(backupP.size()+1);
 							backupP[backupP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
 						}else{//if it hast to be backupped
+              //ifexists
 							excludeP.resize(excludeP.size()+1);
 							excludeP[excludeP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
 						}
+            EarlierSpace = character2;
 				}
 
       }
@@ -175,20 +180,20 @@ bool readTab(string line, int i){
 				startPos++;
 			}
 			string Timestime = line.substr(startPos, location-1); //get time section from line
-
+        logN("BACKUP["+to_s(i+1)+"]");
 		}else{
 			logN("Space(s) found on "+TabPath+"["+to_s(i+1)+"] in the area where the time is defined. Skipping line.");
 			return false;
 		}
 	}else{
-		logN("No spaces found on "+TabPath+"["+to_s(i+1)+"]. Skipping line.\n"+line);
+		logN("No spaces found on "+TabPath+"["+to_s(i+1)+"]. Skipping line.");
 		return false;
 	}
 }
 
-char * generateCommand(string type){
-	char * command = new char[12];
-	return command;
+bool generateCommand(string type){
+  logN("BACKUP");
+	return false;
 } 
 bool process(){//the process which get runned every minute
   logN("Running process...");
@@ -196,10 +201,10 @@ bool process(){//the process which get runned every minute
   if(stat(TabPath.c_str(), &buffer) == 0){//check if tab file exists
   int line_amount = gettabfile_amount();
   string* lines = gettabfile(line_amount);
-  for(int i = 0; i < line_amount; ++i){
+  for(int i = 0; i < line_amount-1; ++i){
 	  bool MustRunNow = readTab(lines[i], i);
 	  if(MustRunNow){
-		  exec(generateCommand("backup"));
+		  generateCommand("backup");
 	  }
   }
   delete[] lines; //delete lines memory

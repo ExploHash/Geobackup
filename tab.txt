@@ -13,5 +13,5 @@
 
 
 
-$*:*:*:*:* /root/build/test
+$*:*:*:*:* /root/build/test !/root/build/te /root/build/haha !/root/build/ja
 

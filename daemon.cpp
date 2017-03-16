@@ -19,9 +19,11 @@
 using namespace std;
 
 //const string Programroot = "/usr/src/geobackup/";
-const string Programroot = "/root/build/geobackup/";
-const string DaemonPath = Programroot+"bin/daemon";
-const string TabPath = Programroot+"tab.txt";
+//const string Logroot = "/var/log/geobackup/";
+//const string Configroot = "/etc/geobackup/";
+const string Configroot = "/root/build/geobackup/";
+const string DaemonPath = Configroot+"bin/daemon";
+const string TabPath = Configroot+"tab.txt";
 const string LogPath = "/root/build/debug.log";
 const string KnownChars = ":0123456789/,*!-$";
 const string Tabformat[5] = {"year","month","day","hour","minute"};
@@ -32,16 +34,16 @@ bool isInstalled(){//check if daemon executable is found
 }
 
 template <typename TS>
-string to_s(TS a){//int to string
+string to_s(TS a){//something to string
 stringstream ss; //create string stream
-ss << a; //print int to stream
+ss << a; //print something to stream
 string str = ss.str(); //convert stream to string
  return str;
 }
 
 int logN(string message){//log message to log file
   time_t seconds;
-  seconds = time(NULL);
+  seconds = time(NULL); //gettimestamp
   ofstream myfile;
   myfile.open(LogPath.c_str(), ios::app); //openfile to write to end
   myfile << "["+to_s(seconds)+"]"+message+"\n";
@@ -128,7 +130,7 @@ bool readTab(string line, int i){
 				if(character == ":"){//new ':' found
 					totalis++;
 				}
-
+      //save in arrag so ca  be used later
 				if(KnownChars.find_first_of(character) == string::npos){//check if character is illegal
 					logN("Incorrect formatting, illegal token '"+character+"' found on "+TabPath+"["+to_s(i+1)+"].");
           error = true;
@@ -175,9 +177,8 @@ bool readTab(string line, int i){
 
       }
 			string currentTime = getTime(); //get current time in year:month:day:hour:minute format
-			int startPos = 0;
 			if(line.substr(0,1) == "$"){//check if always backup ('$') is set
-				startPos++;
+				return true;
 			}
 			string Timestime = line.substr(startPos, location-1); //get time section from line
         logN("BACKUP["+to_s(i+1)+"]");
@@ -236,7 +237,7 @@ int main(){
 
     	//Change Directory
     	//If we cant find the directory we exit with failure.
-    	//if ((chdir(Programroot.c_str())) < 0) { exit(EXIT_FAILURE); }
+    	//if ((chdir(Configroot.c_str())) < 0) { exit(EXIT_FAILURE); }
    		 //Close Standard File Descriptors
    		close(STDIN_FILENO);
     	close(STDOUT_FILENO);

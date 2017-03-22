@@ -160,25 +160,25 @@ bool readTab(string line, int i){
 			vector<string> excludeP;
       for(int a = 0; a < bplength; a++){//loop through chars from path section
 				character2 = backuppaths.substr(a,1);
-				if(character2 == " " && EarlierSpace > 0 && backuppaths.substr(a+1,1) != " "){//if the >1nd space is found and the next char is no space
-						if(backuppaths.substr(EarlierSpace+1,1) != "!"){//if it has to be excluded
+				if(character2 == " " && backuppaths.substr(a+1,1) != " "){//if the >1nd space is found and the next char is no space
+						if(backuppaths.substr(EarlierSpace+1,1) != "!"  && EarlierSpace > 0){//if it has to be excluded
 							string Bpath = backuppaths.substr(EarlierSpace+2, a-1);
 							if(fileExists(Bpath)){
 							backupP.resize(backupP.size()+1);
 							backupP[backupP.size()-1] = Bpath; //add path to array
 							}else{
-								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist. Skipping line.");
+								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
 							}
-						}else{//if it hast to be backupped
+						}else if(EarlierSpace > 0){//if it hast to be backupped
 							string Bpath = backuppaths.substr(EarlierSpace+1, a-1);
 							if(fileExists(Bpath)){
 							excludeP.resize(excludeP.size()+1);
 							excludeP[excludeP.size()-1] = Bpath; //add path to array
 							}else{
-								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist. Skipping line.");
+								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exists.");
 							} 
 						}
-            EarlierSpace = character2;
+						EarlierSpace = a;
 				}
 
       }
@@ -222,7 +222,7 @@ bool process(){//the process which get runned every minute
 }}
 
 int main(){
-  	if(fileExists(DaemonPath){
+		if(fileExists(DaemonPath)){
 
     	logN("Entering Daemon GB");
     	pid_t pid, sid;

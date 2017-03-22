@@ -26,9 +26,9 @@ const string LogPath = "/root/build/debug.log";
 const string KnownChars = ":0123456789/,*!-$";
 const string Tabformat[5] = {"year","month","day","hour","minute"};
 
-bool isInstalled(){//check if daemon executable is found
+bool fileExists(string h){//check if daemon executable is found
   struct stat buffer;   
-  return (stat (DaemonPath.c_str(), &buffer) == 0);
+  return (stat (h.c_str(), &buffer) == 0);
 }
 
 template <typename TS>
@@ -162,13 +162,21 @@ bool readTab(string line, int i){
 				character2 = backuppaths.substr(a,1);
 				if(character2 == " " && EarlierSpace > 0 && backuppaths.substr(a+1,1) != " "){//if the >1nd space is found and the next char is no space
 						if(backuppaths.substr(EarlierSpace+1,1) != "!"){//if it has to be excluded
-              //ifexists
+							string Bpath = backuppaths.substr(EarlierSpace+2, a-1);
+							if(fileExists(Bpath)){
 							backupP.resize(backupP.size()+1);
-							backupP[backupP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
+							backupP[backupP.size()-1] = Bpath; //add path to array
+							}else{
+								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist. Skipping line.");
+							}
 						}else{//if it hast to be backupped
-              //ifexists
+							string Bpath = backuppaths.substr(EarlierSpace+1, a-1);
+							if(fileExists(Bpath)){
 							excludeP.resize(excludeP.size()+1);
-							excludeP[excludeP.size()-1] = backuppaths.substr(EarlierSpace+1, a-1); //add path to array
+							excludeP[excludeP.size()-1] = Bpath; //add path to array
+							}else{
+								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist. Skipping line.");
+							} 
 						}
             EarlierSpace = character2;
 				}
@@ -214,7 +222,7 @@ bool process(){//the process which get runned every minute
 }}
 
 int main(){
-  	if(isInstalled()){
+  	if(fileExists(DaemonPath){
 
     	logN("Entering Daemon GB");
     	pid_t pid, sid;

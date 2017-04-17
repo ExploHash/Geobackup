@@ -149,10 +149,11 @@ bool readTab(string line, int i){
         error = true;
       }
       if(error){//if there were errors
-        logN("Line "+to_s(i+1)+" skipped.");
+        logN("Line "+to_s(i+1)+" skipped. Only checked syntax time section.");
         return false;
       }
       //check if backup paths are formatted right and exist
+      error = false;
       //init
       string currentCharacter;
       string currentPath;
@@ -167,7 +168,11 @@ bool readTab(string line, int i){
       //loop
       for(int pos = 0; pos < bplength; pos++){
         currentCharacter = backuppaths.substr(pos, 1);
-        if(currentCharacter == " " || pos == bplength-1){//if space is found
+        if(EarlierStart == -1 && currentCharacter != " "){//search for next character to ignore extra spaces
+          EarlierStart = pos;
+          logN(to_s(EarlierStart));
+        }
+        if((currentCharacter == " " || pos == bplength-1) && EarlierStart != -1){//if space is found
           endPos = pos - EarlierStart;
           logN(to_s(endPos));
           currentPath = backuppaths.substr(EarlierStart, endPos);
@@ -179,7 +184,8 @@ bool readTab(string line, int i){
               excludeP[excludeP.size()-1] = currentPath.substr(1, currentPath.length()-1); //add path to array
               logN("yes "+currentPath);
             }else{
-              logN("The path '"+currentPath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
+              logN("The path '"+currentPath.substr(1, currentPath.length()-1)+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
+              error = true;
             }
           }else{//backup
             if(fileExists(currentPath)){//exists
@@ -188,12 +194,16 @@ bool readTab(string line, int i){
               logN("yes "+currentPath);
             }else{
               logN("The path '"+currentPath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
+              error = true;
             }
           }
-          EarlierStart = pos+1;
+          EarlierStart = -1;
         }
       }
-
+      if(error){//if there were errors
+        logN("Line "+to_s(i+1)+" skipped after checking backup paths.");
+        return false;
+      }
 
 			string currentTime = getTime(); //get current time in year:month:day:hour:minute format
       int startPos = 0;

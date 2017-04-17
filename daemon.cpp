@@ -28,7 +28,7 @@ const string LogPath = "/root/build/debug.log";
 const string KnownChars = ":0123456789/,*!-$";
 const string Tabformat[5] = {"year","month","day","hour","minute"};
 
-bool fileExists(string h){//check if daemon executable is found
+bool fileExists(string h){//check if file exists
   struct stat buffer;   
   return (stat (h.c_str(), &buffer) == 0);
 }
@@ -152,42 +152,54 @@ bool readTab(string line, int i){
         logN("Line "+to_s(i+1)+" skipped.");
         return false;
       }
-
-      //check if backup paths are formatted right
-      string backuppaths = line.substr(location+1, strlength-(location+1));
-      unsigned short int bplength = backuppaths.length();
-			string character2;
-			int EarlierSpace = 0;
-			vector<string> backupP;
-			vector<string> excludeP;
-      for(int a = 0; a < bplength; a++){//loop through chars from path section
-				character2 = backuppaths.substr(a,1);
-				if(character2 == " " && backuppaths.substr(a+1,1) != " "){//if the >1nd space is found and the next char is no space
-						if(backuppaths.substr(EarlierSpace+1,1) != "!"  && EarlierSpace > 0){//if it has to be excluded
-							string Bpath = backuppaths.substr(EarlierSpace+2, a-1);
-							if(fileExists(Bpath)){
-							backupP.resize(backupP.size()+1);
-							backupP[backupP.size()-1] = Bpath; //add path to array
-							}else{
-								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
-							}
-						}else if(EarlierSpace > 0){//if it hast to be backupped
-							string Bpath = backuppaths.substr(EarlierSpace+1, a-1);
-							if(fileExists(Bpath)){
-							excludeP.resize(excludeP.size()+1);
-							excludeP[excludeP.size()-1] = Bpath; //add path to array
-							}else{
-								logN("The path '"+Bpath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exists.");
-							} 
-						}
-						EarlierSpace = a;
-				}
-
+      //check if backup paths are formatted right and exist
+      //init
+      string currentCharacter;
+      string currentPath;
+      string backupFlag;
+      int endPos;
+      vector<string> backupP; //backup array
+      vector<string> excludeP; //exclude array
+      //define
+      int EarlierStart = 0;
+      string backuppaths = line.substr(location+1, strlength-(location+1)); //backup section
+      unsigned short int bplength = backuppaths.length(); //the length
+      //loop
+      for(int pos = 0; pos < bplength; pos++){
+        currentCharacter = backuppaths.substr(pos, 1);
+        if(currentCharacter == " " || pos == bplength-1){//if space is found
+          endPos = pos - EarlierStart;
+          logN(to_s(endPos));
+          currentPath = backuppaths.substr(EarlierStart, endPos);
+          backupFlag = backuppaths.substr(EarlierStart, 1);
+          logN("'"+currentPath+"'");
+          if(backupFlag == "!"){//exclude
+            if(fileExists(currentPath.substr(1, currentPath.length()-1))){//exists
+              excludeP.resize(excludeP.size()+1);
+              excludeP[excludeP.size()-1] = currentPath.substr(1, currentPath.length()-1); //add path to array
+              logN("yes "+currentPath);
+            }else{
+              logN("The path '"+currentPath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
+            }
+          }else{//backup
+            if(fileExists(currentPath)){//exists
+              backupP.resize(backupP.size()+1);
+              backupP[backupP.size()-1] = currentPath; //add path to array
+              logN("yes "+currentPath);
+            }else{
+              logN("The path '"+currentPath+"' on "+TabPath+"["+to_s(i+1)+"] doesn't exist.");
+            }
+          }
+          EarlierStart = pos+1;
+        }
       }
+
+
 			string currentTime = getTime(); //get current time in year:month:day:hour:minute format
-			if(line.substr(0,1) == "$"){//check if always backup ('$') is set
-				return true;
-			}
+      int startPos = 0;
+      if(line.substr(0,1) == "$"){//check if always backup ('$') is set
+				startPos = 1;
+      }
 			string Timestime = line.substr(startPos, location-1); //get time section from line
         logN("BACKUP["+to_s(i+1)+"]");
 		}else{
